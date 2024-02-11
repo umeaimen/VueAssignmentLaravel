@@ -69,4 +69,19 @@ class AuthController extends BaseController
             return response()->json(['message' => 'User is not authenticated'], 401);
         }
     }
+
+    public function updateProfile(RegisterRequest $request)
+    {
+        $user = Auth::user();
+        $input = $request->all();
+        $user->name = $input['name'];
+        $user->email = $input['email'];
+
+        if ($request->filled('password')) {
+            $user->password = bcrypt($input['password']);
+        }
+        $user->save();
+        return response()->json(['message' => 'User profile updated successfully'], 200);
+    }
+
 }
