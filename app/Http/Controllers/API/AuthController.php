@@ -7,11 +7,10 @@ use Illuminate\Http\Request;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Facades\Password;
-use Illuminate\Support\Str;
 use App\Http\Requests\API\RegisterRequest;
 use App\Http\Requests\API\LoginRequest;
+use App\Http\Resources\UserResource;
+use Illuminate\Http\JsonResponse;
 
 class AuthController extends BaseController
 {
@@ -22,14 +21,21 @@ class AuthController extends BaseController
      * @return \Illuminate\Http\Response
      */
     public function register(RegisterRequest $request)
-    {
-        $input = $request->all();
-        $input['password'] = bcrypt($input['password']);
-        $user = User::create($input);
-        $success['token'] =  $user->createToken('MyApp')->plainTextToken;
-        $success['name'] =  $user->name;
-
-        return $this->sendResponse($success, 'User register successfully.');
+    { 
+        try {
+        $request->merge([
+            'password' => Hash::make($request->password),
+        ]);
+        $user = User::create($request->all());
+        $userResource = new UserResource($user);
+        $token = $user->createToken('access_token')->plainTextToken;
+        return response()->json([
+            'user' => $userResource,
+            'token' => $token,
+        ], JsonResponse::HTTP_OK);
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'Failed to register user'], JsonResponse::HTTP_INTERNAL_SERVER_ERROR);
+        }
     }
 
     /**
@@ -39,14 +45,20 @@ class AuthController extends BaseController
      */
     public function login(LoginRequest $request)
     {
-        if (Auth::attempt(['email' => $request->email, 'password' => $request->password])) {
-            $user = Auth::user();
-            $success['token'] = $user->createToken('MyApp')->plainTextToken;
-            $success['name'] = $user->name;
-
-            return $this->sendResponse($success, 'User login successfully.');
-        } else {
-            return $this->sendError('Unauthorised.', ['error' => 'Unauthorised']);
+        try {
+            if (Auth::attempt(['email' => $request->email, 'password' => $request->password])) {
+                $user = Auth::user();
+                $userResource = new UserResource($user);
+                $token = $user->createToken('access_token')->plainTextToken;
+                return response()->json([
+                    'user' => $userResource,
+                    'token' => $token,
+                ], JsonResponse::HTTP_OK);
+            } else {
+                return response()->json(['message' => 'Unauthorised'], JsonResponse::HTTP_UNAUTHORIZED);
+            }
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'Failed to log in'], JsonResponse::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -61,12 +73,15 @@ class AuthController extends BaseController
      */
     public function logout(Request $request)
     {
-
-        if ($request->user()) {
-            $request->user()->tokens()->delete();
-            return response()->json(['message' => 'Logged out successfully']);
-        } else {
-            return response()->json(['message' => 'User is not authenticated'], 401);
-        }
+        try {
+            if ($request->user()) {
+                $request->user()->currentAccessToken()->delete();
+                return response()->json(['message' => 'Logged out successfully'], JsonResponse::HTTP_OK);
+            } else {
+                return response()->json(['message' => 'User is not authenticated'], JsonResponse::HTTP_UNAUTHORIZED);
+            }
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'An error occurred while logging out'], JsonResponse::HTTP_INTERNAL_SERVER_ERROR);
+        }        
     }
 }
