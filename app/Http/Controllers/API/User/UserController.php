@@ -19,7 +19,10 @@ class UserController extends Controller
             $user = Auth::user();
             $user->update($request->all());
             $userResource = new UserResource($user);
-            return response()->json(['message' => 'User profile updated successfully', 'user' => $userResource], 200);
+            return response()->json([
+                'message' => 'User profile updated successfully',
+                'user' => $userResource,
+            ], JsonResponse::HTTP_OK);
         } catch (\Exception $e) {
             return response()->json(['message' => 'Failed to update user profile', 'error' => $e->getMessage()], JsonResponse::HTTP_INTERNAL_SERVER_ERROR);
         }
@@ -33,7 +36,10 @@ class UserController extends Controller
             ]);
             $user->update($request->all());
             $userResource = new UserResource($user);
-            return response()->json(['message' => 'User password updated successfully', 'user' => $userResource], 200);
+            return response()->json([
+                'message' => 'User password updated successfully',
+                'user' => $userResource,
+            ], JsonResponse::HTTP_OK);
         } catch (\Exception $e) {
             return response()->json(['message' => 'Failed to update user password', 'error' => $e->getMessage()], JsonResponse::HTTP_INTERNAL_SERVER_ERROR);
         }
