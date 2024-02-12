@@ -55,7 +55,7 @@ class AuthController extends BaseController
                     'token' => $token,
                 ], JsonResponse::HTTP_OK);
             } else {
-                return response()->json(['message' => 'Unauthorised'], JsonResponse::HTTP_UNAUTHORIZED);
+                return response()->json(['message' => 'User is not authorized'], JsonResponse::HTTP_UNAUTHORIZED);
             }
         } catch (\Exception $e) {
             return response()->json(['message' => 'Failed to log in'], JsonResponse::HTTP_INTERNAL_SERVER_ERROR);
@@ -78,10 +78,26 @@ class AuthController extends BaseController
                 $request->user()->currentAccessToken()->delete();
                 return response()->json(['message' => 'Logged out successfully'], JsonResponse::HTTP_OK);
             } else {
-                return response()->json(['message' => 'User is not authenticated'], JsonResponse::HTTP_UNAUTHORIZED);
+                return response()->json(['message' => 'User is not authorized'], JsonResponse::HTTP_UNAUTHORIZED);
             }
         } catch (\Exception $e) {
             return response()->json(['message' => 'An error occurred while logging out'], JsonResponse::HTTP_INTERNAL_SERVER_ERROR);
         }        
+    }
+    public function updateProfile(RegisterRequest $request)
+    {
+        try {
+            $user = Auth::user();
+            if ($request->password) {
+                $request->merge([
+                    'password' => Hash::make($request->password),
+                ]);
+            }
+            $user->update($request->all());
+            $userResource = new UserResource($user);
+            return response()->json(['message' => 'User profile updated successfully', 'user' => $userResource], 200);
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'Failed to update user profile', 'error' => $e->getMessage()], JsonResponse::HTTP_INTERNAL_SERVER_ERROR);
+        }
     }
 }
