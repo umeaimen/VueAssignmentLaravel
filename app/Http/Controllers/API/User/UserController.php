@@ -31,11 +31,11 @@ class UserController extends Controller
     {
         try {
             $user = Auth::user();
-            $request->merge([
-                'password' => Hash::make($request->password),
-            ]);
-            $user->update($request->all());
+            $user->password = Hash::make($request->password);
+            $user->save();
+    
             $userResource = new UserResource($user);
+    
             return response()->json([
                 'message' => 'User password updated successfully',
                 'user' => $userResource,
