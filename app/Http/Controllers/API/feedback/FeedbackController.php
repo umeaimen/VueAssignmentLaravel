@@ -33,15 +33,13 @@ class FeedbackController extends Controller
                 $file = $request->file('attachment');
                 $path = $file->store('attachments', 'public');
             }
-
-
-            $request->merge([
-                'user_id' => auth()->id(),
-                'attachment' => $path
-            ]);
-            $feedback = Feedback::create(
-                $request->all()
-            );
+            $feedback = Feedback::create([
+                    'title' => $request->title,
+                    'category' => $request->category,
+                    'description' => $request->description,
+                    'user_id' => auth()->id(),
+                    'attachment' => $path
+                ]);
             return response()->json(new FeedbackResource($feedback), Response::HTTP_CREATED);
         } catch (\Exception $e) {
             return response()->json(['message' => 'Failed to create feedback', 'error' => $e->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -72,10 +70,12 @@ class FeedbackController extends Controller
             } else {
                 $path = $feedback->attachment;
             }
-            $request->merge([
+            $feedback->update([
+                'title' => $request->title,
+                'category' => $request->category,
+                'description' => $request->description,
                 'attachment' => $path
             ]);
-            $feedback->update($request->all());
             $user->notify(new FeedbackUpdated());
             return response()->json(new FeedbackResource($feedback), Response::HTTP_OK);
         } catch (\Exception $e) {

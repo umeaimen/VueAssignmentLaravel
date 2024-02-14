@@ -25,7 +25,8 @@ class FeedbackRequest extends FormRequest
             'title' => 'required|string',
             'description' => 'required|string',
             'category' => 'required|string',
-            'attachment' => 'nullable',
+            'attachment' => 'nullable|image',
         ];
     }
+   
 }
