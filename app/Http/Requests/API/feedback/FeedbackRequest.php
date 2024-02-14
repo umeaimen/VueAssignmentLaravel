@@ -23,7 +23,7 @@ class FeedbackRequest extends FormRequest
     {
         return [
             'title' => 'required|string',
-            'description' => 'required|string',
+            'description' => 'string',
             'category' => 'required|string',
             'attachment' => 'nullable|image',
         ];
