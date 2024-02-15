@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Http\Response;
 use App\Notifications\FeedbackUpdated;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 
 class FeedbackController extends Controller
 {
@@ -51,8 +52,14 @@ class FeedbackController extends Controller
      */
     public function show($id)
     {
-        $feedback = Feedback::findOrFail($id);
-        return response()->json(new FeedbackResource($feedback), Response::HTTP_OK);
+        try {
+            $feedback = Feedback::findOrFail($id);
+            return response()->json(new FeedbackResource($feedback), Response::HTTP_OK);
+        } catch (ModelNotFoundException $e) {
+            return response()->json(['message' => 'Feedback not found'], Response::HTTP_NOT_FOUND);
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'Failed to retrieve feedback', 'error' => $e->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
     }
 
     /**
@@ -78,44 +85,30 @@ class FeedbackController extends Controller
             ]);
             $user->notify(new FeedbackUpdated());
             return response()->json(new FeedbackResource($feedback), Response::HTTP_OK);
+        } catch (ModelNotFoundException $e) {
+            return response()->json(['message' => 'Feedback not found'], Response::HTTP_NOT_FOUND);
         } catch (\Exception $e) {
             return response()->json(['message' => 'Failed to update feedback', 'error' => $e->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
-
     /**
      * Remove the specified resource from storage.
      */
     public function destroy($id)
-    { try {
+    {
+         try {
         $feedback = Feedback::findOrFail($id);
         $feedback->delete();
-
         return response()->json(['message' => 'Feedback deleted successfully'], Response::HTTP_OK);
-    } catch (\Exception $e) {
-        return response()->json(['message' => 'Failed to delete feedback', 'error' => $e->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
-    }
+        } catch (ModelNotFoundException $e) {
+            return response()->json(['message' => 'Feedback not found'], Response::HTTP_NOT_FOUND);
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'Failed to delete feedback', 'error' => $e->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
     }
     public function userFeedback(Request $request)
     {
         $feedbacks = $request->user()->feedbacks()->latest()->get();
         return response()->json(FeedbackResource::collection($feedbacks), 200);
-    }
-
-    public function uploadAttachment(Request $request)
-    {
-        try {
-            if ($request->hasFile('attachment')) {
-                $file = $request->file('attachment');
-                $path = $file->store('attachments', 'public');
-
-                // Return the path of the uploaded file
-                return response()->json(['path' => $path], 200);
-            } else {
-                return response()->json(['message' => 'No file uploaded'], 400);
-            }
-        } catch (\Exception $e) {
-            return response()->json(['message' => 'Failed to upload attachment', 'error' => $e->getMessage()], 500);
-        }
     }
 }

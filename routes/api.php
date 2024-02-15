@@ -27,7 +27,6 @@ Route::group(['middleware' => 'auth:sanctum'], function() {
     Route::post('user/update-profile', [UserController::class, 'updateProfile']);
     Route::post('user/update-password', [UserController::class, 'updatePassword']);;
     Route::get('/user/feedback', [FeedbackController::class, 'userFeedback']);
-    Route::resource('feedback', FeedbackController::class);
-    Route::post('/feedback/upload', [FeedBackController::class, 'uploadAttachment']);
+    Route::resource('feedback', FeedbackController::class);;
   });
 
