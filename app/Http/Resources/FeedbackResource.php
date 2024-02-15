@@ -15,12 +15,13 @@ class FeedbackResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
+        $attachmentUrl = $this->attachment ? asset('storage/' . $this->attachment) : null;
         return [
             'id' => $this->id,
             'title' => $this->title,
             'description' => $this->description,
             'category' => $this->category,
-            'attachment' => $this->attachment,
+            'attachment' => $attachmentUrl, 
             'username' => $this->user->name,
             'created_at' => Carbon::parse($this->created_at)->diffForHumans()
         ];

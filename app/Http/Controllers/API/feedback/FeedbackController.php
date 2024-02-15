@@ -29,18 +29,14 @@ class FeedbackController extends Controller
     public function store(FeedbackRequest $request)
     {
         try {
-            $path = '';
+            $data = $request->all(); 
             if ($request->hasFile('attachment')) {
                 $file = $request->file('attachment');
                 $path = $file->store('attachments', 'public');
             }
-            $feedback = Feedback::create([
-                    'title' => $request->title,
-                    'category' => $request->category,
-                    'description' => $request->description,
-                    'user_id' => auth()->id(),
-                    'attachment' => $path
-                ]);
+            $data['attachment'] = $path;
+            $data['user_id'] =auth()->id();
+            $feedback = Feedback::create($data);
             return response()->json(new FeedbackResource($feedback), Response::HTTP_CREATED);
         } catch (\Exception $e) {
             return response()->json(['message' => 'Failed to create feedback', 'error' => $e->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -70,6 +66,7 @@ class FeedbackController extends Controller
         try {
             $feedback = Feedback::findOrFail($id);
             $user = $feedback->user;
+            $data = $request->all();
             if ($request->hasFile('attachment')) {
                 Storage::delete($feedback->attachment);
                 $file = $request->file('attachment');
@@ -77,12 +74,8 @@ class FeedbackController extends Controller
             } else {
                 $path = $feedback->attachment;
             }
-            $feedback->update([
-                'title' => $request->title,
-                'category' => $request->category,
-                'description' => $request->description,
-                'attachment' => $path
-            ]);
+            $data['attachment'] = $path;
+            $feedback->update($data);
             $user->notify(new FeedbackUpdated());
             return response()->json(new FeedbackResource($feedback), Response::HTTP_OK);
         } catch (ModelNotFoundException $e) {
