@@ -33,8 +33,8 @@ class FeedbackController extends Controller
             if ($request->hasFile('attachment')) {
                 $file = $request->file('attachment');
                 $path = $file->store('attachments', 'public');
+                $data['attachment'] = $path;
             }
-            $data['attachment'] = $path;
             $data['user_id'] = auth()->id();
             $feedback = Feedback::create($data);
             return response()->json(new FeedbackResource($feedback), Response::HTTP_CREATED);
@@ -68,13 +68,14 @@ class FeedbackController extends Controller
             $user = $feedback->user;
             $data = $request->all();
             if ($request->hasFile('attachment')) {
-                Storage::delete($feedback->attachment);
+                $feedback->attachment ? Storage::delete($feedback->attachment) : null;
                 $file = $request->file('attachment');
                 $path = $file->store('attachments', 'public');
+                $data['attachment'] = $path;
             } else {
                 $path = $feedback->attachment;
+               $data['attachment'] = $path;
             }
-            $data['attachment'] = $path;
             $feedback->update($data);
             $user->notify(new FeedbackUpdated());
             return response()->json(new FeedbackResource($feedback), Response::HTTP_OK);
