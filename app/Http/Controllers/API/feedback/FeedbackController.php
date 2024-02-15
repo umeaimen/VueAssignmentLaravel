@@ -29,13 +29,13 @@ class FeedbackController extends Controller
     public function store(FeedbackRequest $request)
     {
         try {
-            $data = $request->all(); 
+            $data = $request->all();
             if ($request->hasFile('attachment')) {
                 $file = $request->file('attachment');
                 $path = $file->store('attachments', 'public');
             }
             $data['attachment'] = $path;
-            $data['user_id'] =auth()->id();
+            $data['user_id'] = auth()->id();
             $feedback = Feedback::create($data);
             return response()->json(new FeedbackResource($feedback), Response::HTTP_CREATED);
         } catch (\Exception $e) {
@@ -89,16 +89,13 @@ class FeedbackController extends Controller
      */
     public function destroy($id)
     {
-         try {
-        $feedback = Feedback::findOrFail($id);
-        $feedback->delete();
-        return response()->json(['message' => 'Feedback deleted successfully'], Response::HTTP_OK);
-        } catch (ModelNotFoundException $e) {
-            return response()->json(['message' => 'Feedback not found'], Response::HTTP_NOT_FOUND);
-        } catch (\Exception $e) {
-            return response()->json(['message' => 'Failed to delete feedback', 'error' => $e->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        try {
+            Feedback::findOrFail($id)->delete();
+            return response()->json(['message' => 'Feedback deleted successfully'], Response::HTTP_OK);
+        } catch (\Throwable $e) {
+            return response()->json(['errors' => $e instanceof ModelNotFoundException ? 'Feedback not found' : 'Failed to delete feedback'], $e instanceof ModelNotFoundException ? Response::HTTP_NOT_FOUND : Response::HTTP_INTERNAL_SERVER_ERROR);
         }
-    }
+    }    
     public function userFeedback(Request $request)
     {
         $feedbacks = $request->user()->feedbacks()->latest()->get();
